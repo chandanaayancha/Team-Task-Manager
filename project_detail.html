@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-folder-open"></i> {{ project.name }}</h2>
+    <div>
+        {% if is_admin %}
+        <a href="{{ url_for('manage_members', project_id=project.id) }}" class="btn btn-secondary">
+            <i class="fas fa-users"></i> Manage Members
+        </a>
+        <a href="{{ url_for('create_task', project_id=project.id) }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Create Task
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<p class="text-muted">{{ project.description or 'No description provided.' }}</p>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Tasks</h5>
+            </div>
+            <div class="card-body">
+                {% if tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Assigned To</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr class="{% if task.is_overdue() %}table-danger{% endif %}">
+                                <td>{{ task.title }}</td>
+                                <td>{{ task.assignee.name if task.assignee else 'Unassigned' }}</td>
+                                <td>
+                                    <span class="badge {% if task.priority.value == 'High' %}bg-danger
+                                                      {% elif task.priority.value == 'Medium' %}bg-warning
+                                                      {% else %}bg-info{% endif %}">
+                                        {{ task.priority.value }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if task.status.value == 'Done' %}bg-success
+                                                      {% elif task.status.value == 'In Progress' %}bg-primary
+                                                      {% else %}bg-secondary{% endif %}">
+                                        {{ task.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ task.due_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if is_admin %}
+                                    <a href="{{ url_for('delete_task', task_id=task.id) }}" class="btn btn-sm btn-danger" 
+                                       onclick="return confirm('Are you sure?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No tasks yet. {% if is_admin %}Create one above!{% endif %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Team Members ({{ members|length }})</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-inline">
+                    {% for member in members %}
+                    <li class="list-inline-item badge bg-light text-dark p-2 m-1">
+                        {{ member.name }}
+                        {% if member.id == project.creator_id %}
+                        <span class="badge bg-primary">Admin</span>
+                        {% elif project.get_user_role(member) %}
+                        <span class="badge bg-secondary">{{ project.get_user_role(member).value }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
